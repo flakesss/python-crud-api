@@ -192,6 +192,25 @@ langsung membaca `messages.json` yang lama.
 
 ## 9. Kegagalan yang ditemukan dan penyelesaiannya
 
+### 9.1 Checkout repository privat gagal (build #1)
+
+**Gejala:** build #1 merah di tahap awal (sebelum stage 1) dengan pesan
+`fatal: cannot exec '.../jenkins-gitclient-pass....sh-copy': Permission denied` lalu
+`could not read Username for 'https://github.com': terminal prompts disabled`.
+
+**Penyebab:** untuk memakai credential `github-pat-readonly`, plugin Git membuat skrip *askpass* sementara di dalam
+`JENKINS_HOME` lalu mengeksekusinya. Jenkins home saat itu di-bind dari path host `/var/jenkins_home`. Di Docker
+Desktop, path tersebut berupa **tmpfs dengan opsi `noexec`**, sehingga skrip tidak boleh dieksekusi dan Git tidak
+mendapat PAT. tmpfs juga berarti seluruh data Jenkins hilang saat Docker Desktop restart.
+
+**Solusi:** `JENKINS_HOME` dipindahkan ke **named volume `jenkins-data`** (ext4, persisten, executable), sesuai pola
+`-v jenkins-data:/var/jenkins_home` pada panduan. Data lama (job dan credential) disalin ke volume, Jenkins dijalankan
+ulang, dan build #2 berhasil checkout repository privat memakai PAT. Bukti:
+[`docs/console-output-build-1-gagal-noexec.txt`](docs/console-output-build-1-gagal-noexec.txt) dan
+[`docs/console-output-build-2.txt`](docs/console-output-build-2.txt).
+
+### 9.2 Health check `localhost` gagal dari dalam container Jenkins
+
 **Gejala:** stage Health Check versi panduan (`curl -fsS http://localhost:5000/health`) gagal dengan
 `curl: (7) Failed to connect to localhost port 5000`, padahal container API berjalan normal.
 
@@ -202,6 +221,17 @@ sendiri, bukan host Docker tempat port 5000 di-publish.
 container (Docker Desktop otomatis; Linux memakai `--add-host=host.docker.internal:host-gateway`). Selain itu,
 pipeline menunggu status Docker `HEALTHCHECK` dulu agar tidak gagal karena aplikasi belum siap. Bukti:
 [`docs/bukti-kegagalan-health-check.txt`](docs/bukti-kegagalan-health-check.txt).
+
+### 9.3 Bukti praktikum (folder `docs/`)
+
+| File | Isi |
+|---|---|
+| `bukti-uji-manual-curl.txt` | Matriks uji endpoint (health, read, create, input kosong, delete, index 999, GET by id, filter) |
+| `console-output-build-1-gagal-noexec.txt` | Build #1 gagal checkout (kegagalan 9.1) |
+| `console-output-build-2.txt` | Build #2 sukses: checkout PAT → syntax check → unit test → build image → deploy → health check |
+| `console-output-build-3-webhook.txt` | Build #3 **Started by GitHub push by flakesss** (webhook via ngrok, tanpa Build Now) |
+| `bukti-persistensi.txt` | Dua pesan dibuat sebelum build #3 dan masih ada setelah container diganti |
+| `bukti-kegagalan-health-check.txt` | `curl localhost:5000` gagal vs `host.docker.internal:5000` berhasil (kegagalan 9.2) |
 
 ## 10. Jawaban pertanyaan analisis
 

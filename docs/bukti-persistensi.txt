@@ -1,0 +1,23 @@
+=== SEBELUM REDEPLOY ===
+Container: python-crud-api:2 | dibuat 2026-11-04T12:00:20.086104881Z | id ee85936d11cb
+$ curl -X POST /messages {"message":"Data persisten 1 - dibuat sebelum redeploy"}
+{"status": "created", "message": {"id": 3, "message": "Data persisten 1 - dibuat sebelum redeploy", "created_at": "2026-11-04T12:01:41.710326+00:00"}}
+$ curl -X POST /messages {"message":"Data persisten 2 - dibuat sebelum redeploy"}
+{"status": "created", "message": {"id": 4, "message": "Data persisten 2 - dibuat sebelum redeploy", "created_at": "2026-11-04T12:01:41.765152+00:00"}}
+$ curl -s http://localhost:5000/messages
+{"messages": [{"id": 2, "message": "Pesan kedua", "created_at": "2026-11-04T11:39:48.487056+00:00"}, {"id": 3, "message": "Data persisten 1 - dibuat sebelum redeploy", "created_at": "2026-11-04T12:01:41.710326+00:00"}, {"id": 4, "message": "Data persisten 2 - dibuat sebelum redeploy", "created_at": "2026-11-04T12:01:41.765152+00:00"}], "total": 3}
+
+=== REDEPLOY OTOMATIS: Jenkins build #3 (Started by GitHub push, commit da553ae) ===
+Console: docker stop/rm production-api-container -> docker run python-crud-api:3 (volume production-api-data dipertahankan)
+
+=== SESUDAH REDEPLOY ===
+Container: python-crud-api:3 | dibuat 2026-11-04T12:04:47.252503496Z | id d62d279c0145
+$ curl -s http://localhost:5000/health
+{"status": "active", "service": "Backend API", "version": "3-da553ae"}
+$ curl -s http://localhost:5000/messages
+{"messages": [{"id": 2, "message": "Pesan kedua", "created_at": "2026-11-04T11:39:48.487056+00:00"}, {"id": 3, "message": "Data persisten 1 - dibuat sebelum redeploy", "created_at": "2026-11-04T12:01:41.710326+00:00"}, {"id": 4, "message": "Data persisten 2 - dibuat sebelum redeploy", "created_at": "2026-11-04T12:01:41.765152+00:00"}], "total": 3}
+
+$ docker volume inspect production-api-data --format "{{.Name}} {{.Mountpoint}} {{.CreatedAt}}"
+production-api-data /var/lib/docker/volumes/production-api-data/_data 2026-11-04T11:39:44Z
+
+KESIMPULAN: container berganti (id dan image berbeda), tetapi pesan id 3 dan 4 yang dibuat sebelum redeploy masih tersedia.
