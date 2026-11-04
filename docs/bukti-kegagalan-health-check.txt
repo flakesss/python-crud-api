@@ -1,0 +1,8 @@
+# Dijalankan dari dalam container Jenkins (sama seperti step sh di pipeline)
+$ curl -fsS http://localhost:5000/health
+curl: (7) Failed to connect to localhost port 5000 after 1 ms: Could not connect to server
+exit code: 7
+
+$ curl -fsS http://host.docker.internal:5000/health
+{"status": "active", "service": "Backend API", "version": "dev"}
+exit code: 0

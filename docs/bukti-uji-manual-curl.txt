@@ -1,0 +1,86 @@
+$ curl -i http://localhost:5000/health
+HTTP/1.0 200 OK
+Server: BaseHTTP/0.6 Python/3.11.18
+Date: Wed, 04 Nov 2026 11:39:48 GMT
+Content-Type: application/json; charset=utf-8
+Content-Length: 64
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Methods: GET, POST, DELETE, OPTIONS
+Access-Control-Allow-Headers: Content-Type
+
+{"status": "active", "service": "Backend API", "version": "dev"}
+
+$ curl -s http://localhost:5000/messages   # Read kosong
+{"messages": [], "total": 0}
+
+$ curl -i -X POST http://localhost:5000/messages -d {"message":"Pesan pertama dari praktikum"}
+HTTP/1.0 201 Created
+Server: BaseHTTP/0.6 Python/3.11.18
+Date: Wed, 04 Nov 2026 11:39:48 GMT
+Content-Type: application/json; charset=utf-8
+Content-Length: 136
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Methods: GET, POST, DELETE, OPTIONS
+Access-Control-Allow-Headers: Content-Type
+
+{"status": "created", "message": {"id": 1, "message": "Pesan pertama dari praktikum", "created_at": "2026-11-04T11:39:48.428199+00:00"}}
+
+$ curl -i -X POST http://localhost:5000/messages -d {"message":"Pesan kedua"}
+HTTP/1.0 201 Created
+Server: BaseHTTP/0.6 Python/3.11.18
+Date: Wed, 04 Nov 2026 11:39:48 GMT
+Content-Type: application/json; charset=utf-8
+Content-Length: 119
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Methods: GET, POST, DELETE, OPTIONS
+Access-Control-Allow-Headers: Content-Type
+
+{"status": "created", "message": {"id": 2, "message": "Pesan kedua", "created_at": "2026-11-04T11:39:48.487056+00:00"}}
+
+$ curl -s http://localhost:5000/messages
+{"messages": [{"id": 1, "message": "Pesan pertama dari praktikum", "created_at": "2026-11-04T11:39:48.428199+00:00"}, {"id": 2, "message": "Pesan kedua", "created_at": "2026-11-04T11:39:48.487056+00:00"}], "total": 2}
+
+$ curl -s http://localhost:5000/messages/2   # Tugas D: GET by id
+{"id": 2, "message": "Pesan kedua", "created_at": "2026-11-04T11:39:48.487056+00:00"}
+
+$ curl -s "http://localhost:5000/messages?q=kedua"   # Tugas D: filter
+{"messages": [{"id": 2, "message": "Pesan kedua", "created_at": "2026-11-04T11:39:48.487056+00:00"}], "total": 1}
+
+$ curl -i -X POST http://localhost:5000/messages -d {"message":""}   # Input kosong
+HTTP/1.0 400 Bad Request
+Server: BaseHTTP/0.6 Python/3.11.18
+Date: Wed, 04 Nov 2026 11:39:48 GMT
+Content-Type: application/json; charset=utf-8
+Content-Length: 38
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Methods: GET, POST, DELETE, OPTIONS
+Access-Control-Allow-Headers: Content-Type
+
+{"error": "message must not be empty"}
+
+$ curl -i -X DELETE "http://localhost:5000/messages?index=0"
+HTTP/1.0 200 OK
+Server: BaseHTTP/0.6 Python/3.11.18
+Date: Wed, 04 Nov 2026 11:39:48 GMT
+Content-Type: application/json; charset=utf-8
+Content-Length: 136
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Methods: GET, POST, DELETE, OPTIONS
+Access-Control-Allow-Headers: Content-Type
+
+{"status": "deleted", "removed": {"id": 1, "message": "Pesan pertama dari praktikum", "created_at": "2026-11-04T11:39:48.428199+00:00"}}
+
+$ curl -i -X DELETE "http://localhost:5000/messages?index=999"
+HTTP/1.0 404 Not Found
+Server: BaseHTTP/0.6 Python/3.11.18
+Date: Wed, 04 Nov 2026 11:39:48 GMT
+Content-Type: application/json; charset=utf-8
+Content-Length: 30
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Methods: GET, POST, DELETE, OPTIONS
+Access-Control-Allow-Headers: Content-Type
+
+{"error": "Message not found"}
+
+$ curl -s http://localhost:5000/messages   # Verify
+{"messages": [{"id": 2, "message": "Pesan kedua", "created_at": "2026-11-04T11:39:48.487056+00:00"}], "total": 1}
